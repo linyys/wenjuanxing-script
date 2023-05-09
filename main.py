@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 import json
 
 # 问卷地址
-url = 'https://www.wjx.cn/vm/QaaZ20B.aspx#'
+url = ''
 number = 1
 # 生成滑动轨迹
 tracks = [i for i in range(1, 50, 3)]
