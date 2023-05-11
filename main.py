@@ -9,12 +9,13 @@ import json
 # 问卷地址
 url = ''
 number = 1
-# 生成滑动轨迹
+# 滑动轨迹
 tracks = [i for i in range(1, 50, 3)]
 
 option = webdriver.EdgeOptions()
 option.add_experimental_option('excludeSwitches', ['enable-automation'])
 option.add_experimental_option('useAutomationExtension', False)
+# option.add_experimental_option('detach', True)  #不自动关闭浏览器
 driver = webdriver.Edge(options=option)
 driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument',
                        {'source': 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
@@ -34,7 +35,7 @@ configs = read_json()
 
 
 def radio(config, index):
-    xpath = f'//*[@id="div{index}"]/div[2]/div'
+    xpath = f'//*[@id="div{index}"]/*[@class="ui-controlgroup column1"]/div'
     a = driver.find_elements(By.XPATH, xpath)
     r = numpy.random.choice(a=numpy.arange(1, len(a) + 1), p=config['gai_lv'])
     driver.find_element(By.CSS_SELECTOR,
@@ -44,12 +45,10 @@ def radio(config, index):
 
 
 def check(config, index):
-    xpath = f'//*[@id="div{index}"]/div[2]/div'
+    xpath = f'//*[@id="div{index}"]/*[@class="ui-controlgroup column1"]/div'
     a = driver.find_elements(By.XPATH, xpath)
-    # b = random.randint(1, len(a))
-    # q = int_random(1, len(a), config['options'])
     q = numpy.random.choice(a=numpy.arange(
-        1, len(a) + 1), size=2, p=config['gai_lv'], replace=False)
+        1, len(a) + 1), size=config['option'], p=config['gai_lv'], replace=False)
     q.sort()
     for r in q:
         driver.find_element(
@@ -59,11 +58,10 @@ def check(config, index):
 
 
 def matrix(config, index):
-    topic_nums = config['item_nums']
+    topic_nums = config['topic_nums']
     for item in range(1, topic_nums + 1):
         r = numpy.random.choice(a=numpy.arange(
             2, topic_nums + 1), p=config['gai_lv'])
-        # r = random.randint(2, 6)  # 随机选择
         driver.find_element(
             By.CSS_SELECTOR, f'#drv{index}_{item} > td:nth-child({r})').click()
 
@@ -71,7 +69,8 @@ def matrix(config, index):
 
 
 def slide(config, index):
-    interval = numpy.random.choice(a=config['intervals'], p=config['gao_lv'])
+    # interval = numpy.random.choice(a=config['intervals'], p=config['gai_lv'])
+    interval = config['intervals']
     score = random.randint(interval[0], interval[1])
     driver.find_element(By.CSS_SELECTOR, f'#q{index}').send_keys(score)
 
@@ -88,19 +87,22 @@ def sort(config, index):
     xpath = f'//*[@id="div{index}"]/ul/li'
     a = driver.find_elements(By.XPATH, xpath)
     q = numpy.random.choice(a=numpy.arange(
-        1, len(a) + 1), replace=False, p=config['gai_lv'])
+        1, len(a) + 1),size=config['option'], replace=False, p=config['gai_lv'])
+    element_arr = []
     for b in q:
-        driver.find_element(
-            By.CSS_SELECTOR, f'#div{index} > ul > li:nth-child({b})').click()
+        element_arr.append(driver.find_element(
+            By.CSS_SELECTOR, f'#div{index} > ul > li:nth-child({b})'))
+    for div in element_arr:
+        div.click()
         time.sleep(0.4)
 
 # 量表
 
 
 def fun1(config, index):
-    xpath = f'//*[@id="div{index}"]/ul/li'
+    xpath = f'//*[@id="div{index}"]/div/ul/li'
     a = driver.find_elements(By.XPATH, xpath)
-    q = numpy.random.choice(a=numpy.arange(1, len(a) + 1), p=config['gai_lv'])
+    q = numpy.random.choice(a=numpy.arange(1, len(a) + 1))
     driver.find_element(
         By.CSS_SELECTOR, f'#div{index} > div.scale-div > div > ul > li:nth-child({q})').click()
 
@@ -128,17 +130,14 @@ def run():
         #     radio(config, driver, index)
         # elif config['item_type'] == 2:
         #     check(config, driver, index)
-    driver.find_element(By.XPATH, '//*[@id="ctlNext"]').click()
-    # 出现点击验证码验证
+    # driver.find_element(By.XPATH, '//*[@id="ctlNext"]').click()
     time.sleep(1)
-    # 点击对话框的确认按钮
     driver.find_element(
         By.XPATH, '//*[@id="layui-layer1"]/div[3]/a[1]').click()
     time.sleep(0.5)
-    # 点击智能检测按钮
     driver.find_element(By.XPATH, '//*[@id="SM_BTN_1"]').click()
     time.sleep(4)
-    # 尝试滑块验证
+    # 滑块验证
     try:
         slider = driver.find_element(
             By.XPATH, '//*[@id="nc_1__scale_text"]/span')
@@ -148,13 +147,11 @@ def run():
                 slider, width, 0).perform()
     except:
         pass
-    # 关闭页面
-    time.sleep(1)
+    time.sleep(2000)
     handles = driver.window_handles
     driver.switch_to.window(handles[0])
-    # 关闭当前页面，如果只有一个页面，则也关闭浏览器
+    return
     driver.close()
-
 
 count = 0
 while count < number:
