@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 import json
 
 # 问卷地址
-url = ''
+url = 'https://www.wjx.cn/vm/toSEz3j.aspx#'
 number = 1
 # 滑动轨迹
 tracks = [i for i in range(1, 50, 3)]
@@ -15,7 +15,7 @@ tracks = [i for i in range(1, 50, 3)]
 option = webdriver.EdgeOptions()
 option.add_experimental_option('excludeSwitches', ['enable-automation'])
 option.add_experimental_option('useAutomationExtension', False)
-# option.add_experimental_option('detach', True)  #不自动关闭浏览器
+option.add_experimental_option('detach', True)  #不自动关闭浏览器
 driver = webdriver.Edge(options=option)
 driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument',
                        {'source': 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
@@ -37,7 +37,7 @@ configs = read_json()
 def radio(config, index):
     xpath = f'//*[@id="div{index}"]/*[@class="ui-controlgroup column1"]/div'
     a = driver.find_elements(By.XPATH, xpath)
-    r = numpy.random.choice(a=numpy.arange(1, len(a) + 1), p=config['gai_lv'])
+    r = numpy.random.choice(a=numpy.arange(1, len(a) + 1), p=config['PR'])
     driver.find_element(By.CSS_SELECTOR,
                         f'#div{index} > div.ui-controlgroup > div:nth-child({r})').click()
 
@@ -48,7 +48,7 @@ def check(config, index):
     xpath = f'//*[@id="div{index}"]/*[@class="ui-controlgroup column1"]/div'
     a = driver.find_elements(By.XPATH, xpath)
     q = numpy.random.choice(a=numpy.arange(
-        1, len(a) + 1), size=config['option'], p=config['gai_lv'], replace=False)
+        1, len(a) + 1), size=config['option'], p=config['PR'], replace=False)
     q.sort()
     for r in q:
         driver.find_element(
@@ -58,18 +58,22 @@ def check(config, index):
 
 
 def matrix(config, index):
-    topic_nums = config['topic_nums']
-    for item in range(1, topic_nums + 1):
+    xpath = f'//*[@id="div{index}"]/div/table/tbody/tr[@tp="d"]'
+    a = driver.find_elements(By.XPATH, xpath)
+    topic_nums = len(a)
+    for item in range(0, topic_nums):
+        option_nums = len(a[item].find_elements(By.XPATH, f'td'))
         r = numpy.random.choice(a=numpy.arange(
-            2, topic_nums + 1), p=config['gai_lv'])
+            2, option_nums + 2), p=config['PR'])
+        print('----------------')
+        print(r)
         driver.find_element(
-            By.CSS_SELECTOR, f'#drv{index}_{item} > td:nth-child({r})').click()
+            By.CSS_SELECTOR, f'#drv{index}_{item + 1} > td:nth-child({r})').click()
 
 # 滑动
 
 
 def slide(config, index):
-    # interval = numpy.random.choice(a=config['intervals'], p=config['gai_lv'])
     interval = config['intervals']
     score = random.randint(interval[0], interval[1])
     driver.find_element(By.CSS_SELECTOR, f'#q{index}').send_keys(score)
@@ -87,7 +91,7 @@ def sort(config, index):
     xpath = f'//*[@id="div{index}"]/ul/li'
     a = driver.find_elements(By.XPATH, xpath)
     q = numpy.random.choice(a=numpy.arange(
-        1, len(a) + 1),size=config['option'], replace=False, p=config['gai_lv'])
+        1, len(a) + 1),size=config['option'], replace=False, p=config['PR'])
     element_arr = []
     for b in q:
         element_arr.append(driver.find_element(
@@ -100,9 +104,9 @@ def sort(config, index):
 
 
 def fun1(config, index):
-    xpath = f'//*[@id="div{index}"]/div/ul/li'
+    xpath = f'//*[@id="div{index}"]/div/div/ul/li'
     a = driver.find_elements(By.XPATH, xpath)
-    q = numpy.random.choice(a=numpy.arange(1, len(a) + 1))
+    q = numpy.random.choice(a=numpy.arange(1, len(a) + 1), p=config['PR'] )
     driver.find_element(
         By.CSS_SELECTOR, f'#div{index} > div.scale-div > div > ul > li:nth-child({q})').click()
 
@@ -126,10 +130,6 @@ def run():
                 sort(config, index)
             case 7:
                 fun1(config, index)
-        # if config['item_type'] == 1:
-        #     radio(config, driver, index)
-        # elif config['item_type'] == 2:
-        #     check(config, driver, index)
     # driver.find_element(By.XPATH, '//*[@id="ctlNext"]').click()
     time.sleep(1)
     driver.find_element(
@@ -150,7 +150,6 @@ def run():
     time.sleep(2000)
     handles = driver.window_handles
     driver.switch_to.window(handles[0])
-    return
     driver.close()
 
 count = 0
